@@ -11,6 +11,11 @@ Introductory JavaScript practice files covering core language primitives, operat
 - [06.challenge.js](06.challenge.js) — small practice challenge
 - [07_if_else.js](07_if_else.js) — conditional statements
 - [08_switch_statement.js](08_switch_statement.js) — switch-case control flow
+- [09_user_inputs.js](09_user_inputs.js) — reading user input
+- [10_rock_paper_scissors.html](10_rock_paper_scissors.html) — interactive game with HTML/CSS/JS
+- [11_loops.js](11_loops.js) — for, while, and do-while loops
+- [12_functions.js](12_functions.js) — function declarations and expressions
+- [13_scope.js](13_scope.js) — variable scope and closures
 
 ## Usage
 1. Install Node.js if you have not already.

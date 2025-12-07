@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade RPS Challenge</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Styles for aesthetics and smooth feedback */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1a1a2e; /* Deep dark blue background */
+            background-image: radial-gradient(circle at center, #2c006b 0%, #1a1a2e 100%);
+        }
+        .container {
+            min-width: 320px;
+        }
+        /* Custom button styling for the game */
+        .choice-btn {
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        .choice-btn:hover {
+            box-shadow: 0 10px 20px rgba(4, 255, 137, 0.4), 0 3px 6px rgba(4, 255, 137, 0.2);
+            transform: translateY(-2px);
+        }
+        .choice-btn:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        /* Animation for result feedback */
+        @keyframes resultFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #result {
+            animation: resultFadeIn 0.5s ease-out;
+        }
+        
+        .choice-display-text {
+            font-size: 1.5rem; /* Large text for choice display */
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container bg-gray-900 p-8 md:p-12 rounded-2xl shadow-2xl border border-purple-700/50">
+        <!-- Game Title -->
+        <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-6 text-center tracking-tight">
+            Arcade RPS
+        </h1>
+        
+        <!-- Scoreboard -->
+        <div class="flex justify-around items-center bg-gray-800 p-4 rounded-xl mb-8 shadow-inner">
+            <div class="text-center">
+                <p class="text-lg font-semibold text-emerald-300">You</p>
+                <span id="playerScore" class="text-5xl font-black text-white">0</span>
+            </div>
+            <div class="text-2xl font-black text-purple-400">|</div>
+            <div class="text-center">
+                <p class="text-lg font-semibold text-cyan-300">Computer</p>
+                <span id="computerScore" class="text-5xl font-black text-white">0</span>
+            </div>
+        </div>
+
+        <!-- Result Display -->
+        <div class="text-center mb-8 h-16 flex items-center justify-center">
+            <h2 id="result" class="text-3xl font-bold text-white">Make your move!</h2>
+        </div>
+
+        <!-- Game Choices & VS Section -->
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+            
+            <!-- Player Choices -->
+            <div class="flex flex-col items-center w-full md:w-auto">
+                <h3 class="text-xl font-semibold text-emerald-400 mb-4">Your Selection</h3>
+                <div class="choices grid grid-cols-3 gap-3">
+                    <button class="choice-btn bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-xl text-3xl font-bold" data-choice="rock">
+                        🗿
+                    </button>
+                    <button class="choice-btn bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-xl text-3xl font-bold" data-choice="paper">
+                        📄
+                    </button>
+                    <button class="choice-btn bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-xl text-3xl font-bold" data-choice="scissors">
+                        ✂️
+                    </button>
+                </div>
+                <p class="mt-4 text-gray-400">You chose: <span id="playerChoice" class="choice-display-text text-emerald-400">-</span></p>
+            </div>
+            
+            <!-- VS Separator -->
+            <div class="text-5xl font-black text-purple-500/80 my-4 md:my-0">
+                VS
+            </div>
+            
+            <!-- Computer Choice -->
+            <div class="flex flex-col items-center w-full md:w-auto">
+                <h3 class="text-xl font-semibold text-cyan-400 mb-4">Computer's Pick</h3>
+                <div class="bg-gray-700 p-4 rounded-xl w-32 h-[68px] flex items-center justify-center">
+                    <span id="computerDisplay" class="text-5xl opacity-0 transition-opacity duration-300">-</span>
+                </div>
+                <p class="mt-4 text-gray-400">Computer chose: <span id="computerChoice" class="choice-display-text text-cyan-400">-</span></p>
+            </div>
+        </div>
+
+        <!-- Reset Button -->
+        <div class="mt-10 text-center">
+            <button id="reset-btn" class="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold text-lg rounded-full shadow-lg transition duration-200">
+                Reset Score
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // DOM Elements
+        const resultDisplay = document.getElementById('result');
+        const playerChoiceDisplay = document.getElementById('playerChoice');
+        const computerChoiceDisplay = document.getElementById('computerChoice');
+        const computerDisplayEmoji = document.getElementById('computerDisplay');
+        const playerScoreSpan = document.getElementById('playerScore');
+        const computerScoreSpan = document.getElementById('computerScore');
+        const resetBtn = document.getElementById('reset-btn');
+        const choiceBtns = document.querySelectorAll('.choice-btn');
+
+        // Game State
+        let playerScore = 0;
+        let computerScore = 0;
+        const choicesMap = {
+            rock: { emoji: '🗿', beats: 'scissors', color: 'text-red-500' },
+            paper: { emoji: '📄', beats: 'rock', color: 'text-blue-500' },
+            scissors: { emoji: '✂️', beats: 'paper', color: 'text-yellow-500' }
+        };
+        const choiceNames = Object.keys(choicesMap);
+
+        // Function to determine winner and update score
+        function determineWinner(userChoice, computerChoice) {
+            // Display choices and their emojis
+            playerChoiceDisplay.textContent = choicesMap[userChoice].emoji;
+            computerChoiceDisplay.textContent = choicesMap[computerChoice].emoji;
+            
+            // Animate computer display
+            computerDisplayEmoji.textContent = choicesMap[computerChoice].emoji;
+            computerDisplayEmoji.classList.remove('opacity-0');
+            computerDisplayEmoji.classList.add('opacity-100');
+
+            let resultText = '';
+            let resultColor = 'text-white';
+
+            if (userChoice === computerChoice) {
+                resultText = "It's a Tie!";
+                resultColor = 'text-yellow-300';
+            } else if (choicesMap[userChoice].beats === computerChoice) {
+                resultText = "You Win! 🎉";
+                resultColor = 'text-emerald-400';
+                playerScore++;
+            } else {
+                resultText = "Computer Wins! 🤖";
+                resultColor = 'text-red-400';
+                computerScore++;
+            }
+
+            // Update DOM
+            resultDisplay.textContent = resultText;
+            resultDisplay.className = `text-3xl font-bold ${resultColor}`; // Apply color and reset class
+
+            playerScoreSpan.textContent = playerScore;
+            computerScoreSpan.textContent = computerScore;
+        }
+
+        // Event Listeners for choice buttons
+        choiceBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const userChoice = e.currentTarget.dataset.choice; 
+                
+                // Computer makes a random choice
+                const randomIndex = Math.floor(Math.random() * choiceNames.length);
+                const computerChoice = choiceNames[randomIndex];
+
+                // Remove previous computer display for re-fade animation
+                computerDisplayEmoji.classList.remove('opacity-100');
+                computerDisplayEmoji.classList.add('opacity-0');
+
+                // Add a small delay for a visual effect before showing the result
+                setTimeout(() => {
+                     determineWinner(userChoice, computerChoice);
+                }, 100); 
+            });
+        });
+
+        // Event Listener for reset button
+        resetBtn.addEventListener('click', () => {
+            // Reset state
+            playerScore = 0;
+            computerScore = 0;
+
+            // Update DOM displays
+            playerScoreSpan.textContent = '0';
+            computerScoreSpan.textContent = '0';
+            playerChoiceDisplay.textContent = '-';
+            computerChoiceDisplay.textContent = '-';
+            computerDisplayEmoji.textContent = '-';
+            computerDisplayEmoji.classList.remove('opacity-100');
+            computerDisplayEmoji.classList.add('opacity-0');
+
+            resultDisplay.textContent = 'Game reset. Make your move!';
+            resultDisplay.className = 'text-3xl font-bold text-white';
+        });
+    </script>
+</body>
+</html>
